@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  avatarUrl    String?
+  role         String   @default("USER")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  profile              Profile?
+  userSkills           UserSkill[]
+  sentMessages         Message[]          @relation("SentMessages")
+  conversationsAsUser1 Conversation[]     @relation("User1Conversations")
+  conversationsAsUser2 Conversation[]     @relation("User2Conversations")
+  sentRequests         LessonRequest[]    @relation("SentRequests")
+  receivedRequests     LessonRequest[]    @relation("ReceivedRequests")
+  givenReviews         Review[]           @relation("GivenReviews")
+  receivedReviews      Review[]           @relation("ReceivedReviews")
+}
+
+model Profile {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  bio                   String?
+  city                  String?
+  district              String?
+  hourlyRate            Float?
+  isSwapAvailable       Boolean  @default(true)
+  isPaidLessonAvailable Boolean  @default(false)
+  availabilityText      String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Skill {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  category  String?
+  createdAt DateTime @default(now())
+
+  userSkills         UserSkill[]
+  offeredRequests    LessonRequest[] @relation("OfferedSkill")
+  wantedRequests     LessonRequest[] @relation("WantedSkill")
+}
+
+model UserSkill {
+  id      String @id @default(cuid())
+  userId  String
+  skillId String
+  type    String
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, skillId, type])
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  user1Id   String
+  user2Id   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user1    User      @relation("User1Conversations", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2    User      @relation("User2Conversations", fields: [user2Id], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@unique([user1Id, user2Id])
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  senderId       String
+  text           String
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+}
+
+model LessonRequest {
+  id             String    @id @default(cuid())
+  senderId       String
+  receiverId     String
+  type           String
+  skillOfferedId String?
+  skillWantedId  String?
+  price          Float?
+  status         String    @default("PENDING")
+  meetingLink    String?
+  note           String?
+  scheduledAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  sender       User    @relation("SentRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver     User    @relation("ReceivedRequests", fields: [receiverId], references: [id], onDelete: Cascade)
+  skillOffered Skill?  @relation("OfferedSkill", fields: [skillOfferedId], references: [id])
+  skillWanted  Skill?  @relation("WantedSkill", fields: [skillWantedId], references: [id])
+  review       Review?
+}
+
+model Review {
+  id              String   @id @default(cuid())
+  reviewerId      String
+  reviewedUserId  String
+  lessonRequestId String   @unique
+  rating          Int
+  comment         String?
+  createdAt       DateTime @default(now())
+
+  reviewer      User          @relation("GivenReviews", fields: [reviewerId], references: [id], onDelete: Cascade)
+  reviewedUser  User          @relation("ReceivedReviews", fields: [reviewedUserId], references: [id], onDelete: Cascade)
+  lessonRequest LessonRequest @relation(fields: [lessonRequestId], references: [id], onDelete: Cascade)
+}
