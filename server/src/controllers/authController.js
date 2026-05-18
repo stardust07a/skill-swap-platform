@@ -25,12 +25,12 @@ const register = async (req, res) => {
       return res.status(400).json({ error: 'Şifre en az 6 karakter olmalıdır.' });
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    const normalizedEmail = normalizeEmail(email);
+    if (!loginEmailRegex.test(normalizedEmail)) {
       return res.status(400).json({ error: 'Geçerli bir e-posta adresi giriniz.' });
     }
 
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existingUser) {
       return res.status(400).json({ error: 'Bu e-posta adresi zaten kullanılıyor.' });
     }
@@ -40,7 +40,7 @@ const register = async (req, res) => {
     const user = await prisma.user.create({
       data: {
         name,
-        email,
+        email: normalizedEmail,
         passwordHash,
         avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
         profile: {
