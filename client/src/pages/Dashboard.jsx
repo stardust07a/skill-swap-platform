@@ -107,7 +107,7 @@ export default function Dashboard() {
           />
           <div className="flex-1">
             <h1 className="text-2xl sm:text-3xl font-bold text-white">
-              Hoş geldin, <span className="gradient-text">{user?.name?.split(' ')[0]}</span> 👋
+              Hoş geldin, <span className="gradient-text">{user?.name?.split(' ')[0]}</span>
             </h1>
             {profile?.city && (
               <div className="flex items-center gap-1.5 mt-1 text-white/50 text-sm">
@@ -315,7 +315,7 @@ export default function Dashboard() {
                         <span className={`${s.cls} shrink-0`}>{s.label}</span>
                       </div>
                       <p className="text-xs text-white/40 mt-1.5">
-                        {req.type === 'SWAP' ? '🔄 Takas' : '💰 Ücretli Ders'}
+                        {req.type === 'SWAP' ? 'Takas' : 'Ücretli Ders'}
                         {req.skillWanted && ` · ${req.skillWanted.name}`}
                       </p>
                     </div>
