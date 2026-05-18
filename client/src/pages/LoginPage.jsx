@@ -15,9 +15,16 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+
+    const email = form.email.trim()
+    if (!email || !form.password) {
+      setError('E-posta ve şifre zorunludur.')
+      return
+    }
+
     setLoading(true)
     try {
-      await login(form.email, form.password)
+      await login(email, form.password)
       navigate('/dashboard')
     } catch (err) {
       setError(err.response?.data?.error || 'Giriş yapılamadı. Lütfen tekrar deneyin.')
@@ -60,6 +67,7 @@ export default function LoginPage() {
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 className="flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm"
+                role="alert"
               >
                 <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                 <span>{error}</span>
