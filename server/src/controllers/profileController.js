@@ -1,6 +1,29 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+const cleanText = (value) => {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  const trimmed = String(value).trim();
+  return trimmed || null;
+};
+
+const isValidHttpUrl = (value) => {
+  if (!value) return true;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
+const parseHourlyRate = (value) => {
+  if (value === undefined || value === null || value === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : NaN;
+};
+
 const getMyProfile = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
@@ -35,34 +58,54 @@ const updateMyProfile = async (req, res) => {
       hourlyRate, isSwapAvailable, isPaidLessonAvailable, availabilityText,
     } = req.body;
 
+    const cleanedName = cleanText(name);
+    const cleanedAvatarUrl = cleanText(avatarUrl);
+    const cleanedBio = cleanText(bio);
+    const cleanedCity = cleanText(city);
+    const cleanedDistrict = cleanText(district);
+    const cleanedAvailabilityText = cleanText(availabilityText);
+    const parsedHourlyRate = parseHourlyRate(hourlyRate);
+
+    if (name !== undefined && !cleanedName) {
+      return res.status(400).json({ error: 'Ad soyad bos olamaz.' });
+    }
+
+    if (!isValidHttpUrl(cleanedAvatarUrl)) {
+      return res.status(400).json({ error: 'Profil foto URL gecerli bir http/https adresi olmalidir.' });
+    }
+
+    if (Number.isNaN(parsedHourlyRate)) {
+      return res.status(400).json({ error: 'Saatlik ucret 0 veya daha buyuk bir sayi olmalidir.' });
+    }
+
     const updatedUser = await prisma.user.update({
       where: { id: req.user.id },
       data: {
-        ...(name && { name }),
-        ...(avatarUrl !== undefined && { avatarUrl }),
+        ...(cleanedName && { name: cleanedName }),
+        ...(avatarUrl !== undefined && { avatarUrl: cleanedAvatarUrl }),
       },
     });
 
     const updatedProfile = await prisma.profile.upsert({
       where: { userId: req.user.id },
       update: {
-        ...(bio !== undefined && { bio }),
-        ...(city !== undefined && { city }),
-        ...(district !== undefined && { district }),
-        ...(hourlyRate !== undefined && { hourlyRate: parseFloat(hourlyRate) || null }),
+        ...(bio !== undefined && { bio: cleanedBio }),
+        ...(city !== undefined && { city: cleanedCity }),
+        ...(district !== undefined && { district: cleanedDistrict }),
+        ...(hourlyRate !== undefined && { hourlyRate: parsedHourlyRate }),
         ...(isSwapAvailable !== undefined && { isSwapAvailable }),
         ...(isPaidLessonAvailable !== undefined && { isPaidLessonAvailable }),
-        ...(availabilityText !== undefined && { availabilityText }),
+        ...(availabilityText !== undefined && { availabilityText: cleanedAvailabilityText }),
       },
       create: {
         userId: req.user.id,
-        bio,
-        city,
-        district,
-        hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
+        bio: cleanedBio,
+        city: cleanedCity,
+        district: cleanedDistrict,
+        hourlyRate: parsedHourlyRate,
         isSwapAvailable: isSwapAvailable ?? true,
         isPaidLessonAvailable: isPaidLessonAvailable ?? false,
-        availabilityText,
+        availabilityText: cleanedAvailabilityText,
       },
     });
 
