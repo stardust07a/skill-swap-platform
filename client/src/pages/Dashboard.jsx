@@ -123,7 +123,14 @@ export default function Dashboard() {
               <span className="text-xs text-white/50">Profil Tamamlama</span>
               <span className="text-xs font-semibold text-purple-400">{profilePct}%</span>
             </div>
-            <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+            <div
+              className="h-2 bg-white/10 rounded-full overflow-hidden"
+              role="progressbar"
+              aria-label="Profil tamamlama yüzdesi"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow={profilePct}
+            >
               <div
                 className="h-full bg-gradient-to-r from-purple-600 to-pink-600 rounded-full transition-all duration-700"
                 style={{ width: `${profilePct}%` }}
