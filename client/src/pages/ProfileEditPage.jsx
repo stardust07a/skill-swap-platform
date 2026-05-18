@@ -66,13 +66,24 @@ export default function ProfileEditPage() {
   }
 
   const handleAddSkill = async () => {
-    if (!newSkillId && !newSkillName.trim()) return
+    const skillName = newSkillName.trim()
+    if (!newSkillId && !skillName) return
+
+    const selectedSkill = newSkillId
+      ? skills.find((skill) => skill.id === newSkillId)
+      : skills.find((skill) => skill.name.toLocaleLowerCase('tr-TR') === skillName.toLocaleLowerCase('tr-TR'))
+
+    if (selectedSkill && userSkills.some((us) => us.skillId === selectedSkill.id && us.type === newSkillType)) {
+      setError('Bu beceri zaten aynı listeye eklenmiş.')
+      return
+    }
+
     setSkillLoading(true)
     setError('')
     try {
-      let skillId = newSkillId
-      if (!skillId && newSkillName.trim()) {
-        const { data } = await api.post('/skills', { name: newSkillName.trim() })
+      let skillId = newSkillId || selectedSkill?.id
+      if (!skillId && skillName) {
+        const { data } = await api.post('/skills', { name: skillName })
         skillId = data.skill.id
       }
       const { data } = await api.post('/profile/skills', { skillId, type: newSkillType })
