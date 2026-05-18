@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Layout from './layouts/Layout'
 
@@ -14,6 +14,7 @@ import RequestsPage from './pages/RequestsPage'
 import ReviewsPage from './pages/ReviewsPage'
 import AdminPage from './pages/AdminPage'
 import LoadingSpinner from './components/LoadingSpinner'
+import { isDemoDisabledPath } from './config/demoMode'
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth()
@@ -37,6 +38,14 @@ const PublicRoute = ({ children }) => {
   return children
 }
 
+const DemoRouteGuard = ({ children }) => {
+  const location = useLocation()
+  if (isDemoDisabledPath(location.pathname)) {
+    return <Navigate to="/dashboard" replace />
+  }
+  return children
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -48,17 +57,17 @@ function AppRoutes() {
       {/* Protected routes */}
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route path="dashboard" element={<Dashboard />} />
-        <Route path="profile/edit" element={<ProfileEditPage />} />
-        <Route path="matches" element={<MatchesPage />} />
-        <Route path="users/:id" element={<UserDetailPage />} />
-        <Route path="messages" element={<MessagesPage />} />
-        <Route path="messages/:conversationId" element={<MessagesPage />} />
-        <Route path="requests" element={<RequestsPage />} />
-        <Route path="reviews" element={<ReviewsPage />} />
+        <Route path="profile/edit" element={<DemoRouteGuard><ProfileEditPage /></DemoRouteGuard>} />
+        <Route path="matches" element={<DemoRouteGuard><MatchesPage /></DemoRouteGuard>} />
+        <Route path="users/:id" element={<DemoRouteGuard><UserDetailPage /></DemoRouteGuard>} />
+        <Route path="messages" element={<DemoRouteGuard><MessagesPage /></DemoRouteGuard>} />
+        <Route path="messages/:conversationId" element={<DemoRouteGuard><MessagesPage /></DemoRouteGuard>} />
+        <Route path="requests" element={<DemoRouteGuard><RequestsPage /></DemoRouteGuard>} />
+        <Route path="reviews" element={<DemoRouteGuard><ReviewsPage /></DemoRouteGuard>} />
       </Route>
 
       {/* Admin routes */}
-      <Route path="/admin" element={<AdminRoute><Layout /></AdminRoute>}>
+      <Route path="/admin" element={<DemoRouteGuard><AdminRoute><Layout /></AdminRoute></DemoRouteGuard>}>
         <Route index element={<AdminPage />} />
       </Route>
 
