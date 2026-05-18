@@ -10,6 +10,9 @@ const generateToken = (userId) => {
   });
 };
 
+const normalizeEmail = (email) => String(email).trim().toLowerCase();
+const loginEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -78,7 +81,13 @@ const login = async (req, res) => {
       return res.status(400).json({ error: 'E-posta ve şifre zorunludur.' });
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const normalizedEmail = normalizeEmail(email);
+
+    if (!loginEmailRegex.test(normalizedEmail)) {
+      return res.status(400).json({ error: 'Gecerli bir e-posta adresi giriniz.' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (!user) {
       return res.status(401).json({ error: 'E-posta veya şifre hatalı.' });
     }
