@@ -6,6 +6,7 @@ import {
   Star, Settings, LogOut, Shield, ChevronDown
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { PRESENTATION_DEMO_MODE } from '../config/demoMode'
 
 const navItems = [
   { to: '/dashboard', label: 'Ana Sayfa', icon: Home },
@@ -14,6 +15,10 @@ const navItems = [
   { to: '/requests', label: 'Talepler', icon: BookOpen },
   { to: '/reviews', label: 'Yorumlar', icon: Star },
 ]
+
+const visibleNavItems = PRESENTATION_DEMO_MODE
+  ? navItems.filter((item) => item.to === '/dashboard')
+  : navItems
 
 const Navbar = () => {
   const { user, logout } = useAuth()
@@ -43,7 +48,7 @@ const Navbar = () => {
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-1">
-            {navItems.map(({ to, label, icon: Icon }) => (
+            {visibleNavItems.map(({ to, label, icon: Icon }) => (
               <Link
                 key={to}
                 to={to}
@@ -57,7 +62,7 @@ const Navbar = () => {
                 {label}
               </Link>
             ))}
-            {user?.role === 'ADMIN' && (
+            {!PRESENTATION_DEMO_MODE && user?.role === 'ADMIN' && (
               <Link
                 to="/admin"
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200
@@ -97,14 +102,16 @@ const Navbar = () => {
                     transition={{ duration: 0.15 }}
                     className="absolute right-0 mt-2 w-48 glass-dark rounded-xl border border-white/10 shadow-2xl overflow-hidden"
                   >
-                    <Link
-                      to="/profile/edit"
-                      onClick={() => setProfileOpen(false)}
-                      className="flex items-center gap-3 px-4 py-3 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-colors"
-                    >
-                      <Settings className="w-4 h-4" />
-                      Profili Düzenle
-                    </Link>
+                    {!PRESENTATION_DEMO_MODE && (
+                      <Link
+                        to="/profile/edit"
+                        onClick={() => setProfileOpen(false)}
+                        className="flex items-center gap-3 px-4 py-3 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-colors"
+                      >
+                        <Settings className="w-4 h-4" />
+                        Profili Düzenle
+                      </Link>
+                    )}
                     <button
                       onClick={handleLogout}
                       className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
@@ -152,7 +159,7 @@ const Navbar = () => {
                 </div>
               </div>
 
-              {navItems.map(({ to, label, icon: Icon }) => (
+              {visibleNavItems.map(({ to, label, icon: Icon }) => (
                 <Link
                   key={to}
                   to={to}
@@ -168,7 +175,7 @@ const Navbar = () => {
                 </Link>
               ))}
 
-              {user?.role === 'ADMIN' && (
+              {!PRESENTATION_DEMO_MODE && user?.role === 'ADMIN' && (
                 <Link
                   to="/admin"
                   onClick={() => setMobileOpen(false)}
@@ -179,14 +186,16 @@ const Navbar = () => {
                 </Link>
               )}
 
-              <Link
-                to="/profile/edit"
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-white/60 hover:text-white hover:bg-white/5 transition-all"
-              >
-                <Settings className="w-4 h-4" />
-                Profili Düzenle
-              </Link>
+              {!PRESENTATION_DEMO_MODE && (
+                <Link
+                  to="/profile/edit"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-white/60 hover:text-white hover:bg-white/5 transition-all"
+                >
+                  <Settings className="w-4 h-4" />
+                  Profili Düzenle
+                </Link>
+              )}
 
               <button
                 onClick={() => { handleLogout(); setMobileOpen(false) }}
