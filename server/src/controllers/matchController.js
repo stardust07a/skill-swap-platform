@@ -119,6 +119,8 @@ const getMatches = async (req, res) => {
       };
     });
 
+    matches = matches.filter((match) => match.score > 0);
+
     // Beceri filtresi
     if (skill) {
       matches = matches.filter((m) =>
