@@ -45,6 +45,9 @@ const calculateMatchScore = (currentUser, otherUser) => {
   return Math.min(score, 100);
 };
 
+const hasSkillMatch = (match) =>
+  match.matchingTeachSkills.length > 0 || match.matchingLearnSkills.length > 0;
+
 const getMatches = async (req, res) => {
   try {
     const { skill, city, mode } = req.query;
@@ -116,8 +119,9 @@ const getMatches = async (req, res) => {
         score,
         matchingTeachSkills,
         matchingLearnSkills,
+        hasSkillMatch: matchingTeachSkills.length > 0 || matchingLearnSkills.length > 0,
       };
-    });
+    }).filter(hasSkillMatch);
 
     // Beceri filtresi
     if (skill) {
