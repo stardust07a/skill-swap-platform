@@ -4,8 +4,9 @@ import api from '../services/api'
 import { motion } from 'framer-motion'
 import {
   User, MapPin, DollarSign, FileText, Clock, Save,
-  Plus, Trash2, AlertCircle, CheckCircle, GraduationCap, BookOpen
+  AlertCircle, CheckCircle
 } from 'lucide-react'
+import SkillManager from '../components/SkillManager'
 
 export default function ProfileEditPage() {
   const { user, fetchMe } = useAuth()
@@ -15,11 +16,7 @@ export default function ProfileEditPage() {
   })
   const [skills, setSkills] = useState([])
   const [userSkills, setUserSkills] = useState([])
-  const [newSkillId, setNewSkillId] = useState('')
-  const [newSkillType, setNewSkillType] = useState('TEACH')
-  const [newSkillName, setNewSkillName] = useState('')
   const [loading, setLoading] = useState(false)
-  const [skillLoading, setSkillLoading] = useState(false)
   const [success, setSuccess] = useState('')
   const [error, setError] = useState('')
 
@@ -48,8 +45,8 @@ export default function ProfileEditPage() {
     } catch {}
   }
 
-  const handleSave = async (e) => {
-    e.preventDefault()
+  const handleSave = async (event) => {
+    event.preventDefault()
     setLoading(true)
     setError('')
     setSuccess('')
@@ -65,54 +62,6 @@ export default function ProfileEditPage() {
     }
   }
 
-  const handleAddSkill = async () => {
-    const skillName = newSkillName.trim()
-    if (!newSkillId && !skillName) return
-
-    const selectedSkill = newSkillId
-      ? skills.find((skill) => skill.id === newSkillId)
-      : skills.find((skill) => skill.name.toLocaleLowerCase('tr-TR') === skillName.toLocaleLowerCase('tr-TR'))
-
-    if (selectedSkill && userSkills.some((us) => us.skillId === selectedSkill.id && us.type === newSkillType)) {
-      setError('Bu beceri zaten aynı listeye eklenmiş.')
-      return
-    }
-
-    setSkillLoading(true)
-    setError('')
-    try {
-      let skillId = newSkillId || selectedSkill?.id
-      if (!skillId && skillName) {
-        const { data } = await api.post('/skills', { name: skillName })
-        skillId = data.skill.id
-      }
-      const { data } = await api.post('/profile/skills', { skillId, type: newSkillType })
-      setUserSkills((prev) => [...prev, data.userSkill])
-      setNewSkillId('')
-      setNewSkillName('')
-    } catch (err) {
-      setError(err.response?.data?.error || 'Beceri eklenemedi.')
-    } finally {
-      setSkillLoading(false)
-    }
-  }
-
-  const handleRemoveSkill = async (id) => {
-    try {
-      await api.delete(`/profile/skills/${id}`)
-      setUserSkills((prev) => prev.filter((us) => us.id !== id))
-    } catch (err) {
-      setError(err.response?.data?.error || 'Beceri kaldırılamadı.')
-    }
-  }
-
-  const teachSkills = userSkills.filter((us) => us.type === 'TEACH')
-  const learnSkills = userSkills.filter((us) => us.type === 'LEARN')
-
-  const availableSkills = skills.filter(
-    (s) => !userSkills.some((us) => us.skillId === s.id && us.type === newSkillType)
-  )
-
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
       <h1 className="text-2xl font-bold text-white">Profili Düzenle</h1>
@@ -122,6 +71,7 @@ export default function ProfileEditPage() {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center gap-3 p-4 rounded-xl bg-green-500/10 border border-green-500/30 text-green-400 text-sm"
+          role="status"
         >
           <CheckCircle className="w-4 h-4 shrink-0" />
           {success}
@@ -133,6 +83,7 @@ export default function ProfileEditPage() {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm"
+          role="alert"
         >
           <AlertCircle className="w-4 h-4 shrink-0" />
           {error}
@@ -140,17 +91,15 @@ export default function ProfileEditPage() {
       )}
 
       <form onSubmit={handleSave} className="space-y-6">
-        {/* Basic info */}
         <div className="glass rounded-2xl p-6 space-y-4">
           <h2 className="text-lg font-semibold text-white flex items-center gap-2">
             <User className="w-5 h-5 text-purple-400" /> Temel Bilgiler
           </h2>
 
-          {/* Avatar preview */}
           <div className="flex items-center gap-4">
             <img
-              src={form.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${form.name}`}
-              alt="Avatar"
+              src={form.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(form.name || 'Skill Swap')}`}
+              alt="Profil avatarı"
               className="w-16 h-16 rounded-2xl object-cover bg-purple-900"
             />
             <div className="flex-1">
@@ -158,7 +107,7 @@ export default function ProfileEditPage() {
               <input
                 type="url"
                 value={form.avatarUrl}
-                onChange={(e) => setForm({ ...form, avatarUrl: e.target.value })}
+                onChange={(event) => setForm({ ...form, avatarUrl: event.target.value })}
                 placeholder="https://..."
                 className="input-field text-sm"
               />
@@ -170,7 +119,7 @@ export default function ProfileEditPage() {
             <input
               type="text"
               value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              onChange={(event) => setForm({ ...form, name: event.target.value })}
               className="input-field"
               required
             />
@@ -182,7 +131,7 @@ export default function ProfileEditPage() {
             </label>
             <textarea
               value={form.bio}
-              onChange={(e) => setForm({ ...form, bio: e.target.value })}
+              onChange={(event) => setForm({ ...form, bio: event.target.value })}
               placeholder="Kendin hakkında kısa bir tanıtım yaz..."
               rows={3}
               className="input-field resize-none"
@@ -190,18 +139,17 @@ export default function ProfileEditPage() {
           </div>
         </div>
 
-        {/* Location */}
         <div className="glass rounded-2xl p-6 space-y-4">
           <h2 className="text-lg font-semibold text-white flex items-center gap-2">
             <MapPin className="w-5 h-5 text-pink-400" /> Konum
           </h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-white/70 mb-1.5">Şehir</label>
               <input
                 type="text"
                 value={form.city}
-                onChange={(e) => setForm({ ...form, city: e.target.value })}
+                onChange={(event) => setForm({ ...form, city: event.target.value })}
                 placeholder="İstanbul"
                 className="input-field"
               />
@@ -211,7 +159,7 @@ export default function ProfileEditPage() {
               <input
                 type="text"
                 value={form.district}
-                onChange={(e) => setForm({ ...form, district: e.target.value })}
+                onChange={(event) => setForm({ ...form, district: event.target.value })}
                 placeholder="Kadıköy"
                 className="input-field"
               />
@@ -219,7 +167,6 @@ export default function ProfileEditPage() {
           </div>
         </div>
 
-        {/* Lesson settings */}
         <div className="glass rounded-2xl p-6 space-y-4">
           <h2 className="text-lg font-semibold text-white flex items-center gap-2">
             <DollarSign className="w-5 h-5 text-cyan-400" /> Ders Ayarları
@@ -253,11 +200,11 @@ export default function ProfileEditPage() {
 
           {form.isPaidLessonAvailable && (
             <div>
-              <label className="block text-sm font-medium text-white/70 mb-1.5">Saatlik Ücret (₺)</label>
+              <label className="block text-sm font-medium text-white/70 mb-1.5">Saatlik Ücret (TL)</label>
               <input
                 type="number"
                 value={form.hourlyRate}
-                onChange={(e) => setForm({ ...form, hourlyRate: e.target.value })}
+                onChange={(event) => setForm({ ...form, hourlyRate: event.target.value })}
                 placeholder="150"
                 min="0"
                 className="input-field"
@@ -272,7 +219,7 @@ export default function ProfileEditPage() {
             <input
               type="text"
               value={form.availabilityText}
-              onChange={(e) => setForm({ ...form, availabilityText: e.target.value })}
+              onChange={(event) => setForm({ ...form, availabilityText: event.target.value })}
               placeholder="Hafta içi akşamları ve hafta sonları..."
               className="input-field"
             />
@@ -288,96 +235,12 @@ export default function ProfileEditPage() {
         </button>
       </form>
 
-      {/* Skills section */}
-      <div className="glass rounded-2xl p-6 space-y-5">
-        <h2 className="text-lg font-semibold text-white">Becerilerim</h2>
-
-        {/* Teach skills */}
-        <div>
-          <p className="text-sm font-medium text-white/60 mb-2 flex items-center gap-1.5">
-            <GraduationCap className="w-4 h-4 text-purple-400" /> Öğrettiğim Beceriler
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {teachSkills.length === 0 && (
-              <span className="text-sm text-white/30">Henüz eklenmedi</span>
-            )}
-            {teachSkills.map((us) => (
-              <div key={us.id} className="flex items-center gap-1.5 skill-badge-teach">
-                <span>{us.skill?.name}</span>
-                <button onClick={() => handleRemoveSkill(us.id)} className="hover:text-red-400 transition-colors">
-                  <Trash2 className="w-3 h-3" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Learn skills */}
-        <div>
-          <p className="text-sm font-medium text-white/60 mb-2 flex items-center gap-1.5">
-            <BookOpen className="w-4 h-4 text-cyan-400" /> Öğrenmek İstediğim Beceriler
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {learnSkills.length === 0 && (
-              <span className="text-sm text-white/30">Henüz eklenmedi</span>
-            )}
-            {learnSkills.map((us) => (
-              <div key={us.id} className="flex items-center gap-1.5 skill-badge-learn">
-                <span>{us.skill?.name}</span>
-                <button onClick={() => handleRemoveSkill(us.id)} className="hover:text-red-400 transition-colors">
-                  <Trash2 className="w-3 h-3" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Add skill */}
-        <div className="border-t border-white/10 pt-4 space-y-3">
-          <p className="text-sm font-medium text-white/70">Yeni Beceri Ekle</p>
-          <div className="flex gap-2">
-            <select
-              value={newSkillType}
-              onChange={(e) => setNewSkillType(e.target.value)}
-              className="input-field w-40 text-sm"
-            >
-              <option value="TEACH">Öğreteceğim</option>
-              <option value="LEARN">Öğreneceğim</option>
-            </select>
-            <select
-              value={newSkillId}
-              onChange={(e) => { setNewSkillId(e.target.value); setNewSkillName('') }}
-              className="input-field flex-1 text-sm"
-            >
-              <option value="">Mevcut beceri seç...</option>
-              {availableSkills.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={newSkillName}
-              onChange={(e) => { setNewSkillName(e.target.value); setNewSkillId('') }}
-              placeholder="Ya da yeni beceri yaz..."
-              className="input-field flex-1 text-sm"
-            />
-            <button
-              type="button"
-              onClick={handleAddSkill}
-              disabled={skillLoading || (!newSkillId && !newSkillName.trim())}
-              className="btn-primary px-4 py-2.5 text-sm"
-            >
-              {skillLoading ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <Plus className="w-4 h-4" />
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
+      <SkillManager
+        skills={skills}
+        userSkills={userSkills}
+        onChange={setUserSkills}
+        onError={setError}
+      />
     </div>
   )
 }
