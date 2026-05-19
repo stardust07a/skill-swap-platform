@@ -20,9 +20,9 @@ export default function MatchesPage() {
     setLoading(true)
     try {
       const query = new URLSearchParams(
-        Object.fromEntries(Object.entries(params).filter(([_, v]) => v))
+        Object.fromEntries(Object.entries(params).filter(([, value]) => value))
       ).toString()
-      const { data } = await api.get(`/matches${query ? '?' + query : ''}`)
+      const { data } = await api.get(`/matches${query ? `?${query}` : ''}`)
       setMatches(data.matches || [])
     } catch (err) {
       console.error(err)
@@ -45,23 +45,30 @@ export default function MatchesPage() {
     setShowFilters(false)
   }
 
+  const removeFilter = (key) => {
+    const nextFilters = { ...applied, [key]: '' }
+    setApplied(nextFilters)
+    setFilters((current) => ({ ...current, [key]: '' }))
+    fetchMatches(nextFilters)
+  }
+
   const hasFilters = Object.values(applied).some(Boolean)
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <Users className="w-6 h-6 text-purple-400" />
-            Eşleşmeler
+            Eşleşme Önerileri
           </h1>
           <p className="text-white/50 text-sm mt-1">
-            Sana en uygun {matches.length} kişi bulundu
+            Öğrettiğin ve öğrenmek istediğin becerilere göre {matches.length} uygun kişi bulundu.
           </p>
         </div>
         <button
-          onClick={() => setShowFilters(!showFilters)}
+          type="button"
+          onClick={() => setShowFilters((current) => !current)}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all
             ${hasFilters ? 'bg-purple-600/30 text-purple-300 border border-purple-500/40' : 'glass hover:bg-white/10 text-white/70'}`}
         >
@@ -75,7 +82,6 @@ export default function MatchesPage() {
         </button>
       </div>
 
-      {/* Filters panel */}
       <motion.div
         initial={false}
         animate={{ height: showFilters ? 'auto' : 0, opacity: showFilters ? 1 : 0 }}
@@ -88,33 +94,36 @@ export default function MatchesPage() {
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs text-white/50 mb-1.5">Beceri</label>
+              <label className="block text-xs text-white/50 mb-1.5" htmlFor="match-skill-filter">Beceri</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
                 <input
+                  id="match-skill-filter"
                   type="text"
                   value={filters.skill}
-                  onChange={(e) => setFilters({ ...filters, skill: e.target.value })}
+                  onChange={(event) => setFilters({ ...filters, skill: event.target.value })}
                   placeholder="Gitar, Kod..."
                   className="input-field pl-9 text-sm"
                 />
               </div>
             </div>
             <div>
-              <label className="block text-xs text-white/50 mb-1.5">Şehir</label>
+              <label className="block text-xs text-white/50 mb-1.5" htmlFor="match-city-filter">Şehir</label>
               <input
+                id="match-city-filter"
                 type="text"
                 value={filters.city}
-                onChange={(e) => setFilters({ ...filters, city: e.target.value })}
+                onChange={(event) => setFilters({ ...filters, city: event.target.value })}
                 placeholder="İstanbul..."
                 className="input-field text-sm"
               />
             </div>
             <div>
-              <label className="block text-xs text-white/50 mb-1.5">Mod</label>
+              <label className="block text-xs text-white/50 mb-1.5" htmlFor="match-mode-filter">Mod</label>
               <select
+                id="match-mode-filter"
                 value={filters.mode}
-                onChange={(e) => setFilters({ ...filters, mode: e.target.value })}
+                onChange={(event) => setFilters({ ...filters, mode: event.target.value })}
                 className="input-field text-sm"
               >
                 <option value="">Tümü</option>
@@ -124,11 +133,11 @@ export default function MatchesPage() {
             </div>
           </div>
           <div className="flex gap-3">
-            <button onClick={handleApply} className="btn-primary text-sm px-5 py-2.5">
+            <button type="button" onClick={handleApply} className="btn-primary text-sm px-5 py-2.5">
               Uygula
             </button>
             {hasFilters && (
-              <button onClick={handleReset} className="btn-secondary text-sm px-5 py-2.5 flex items-center gap-2">
+              <button type="button" onClick={handleReset} className="btn-secondary text-sm px-5 py-2.5 flex items-center gap-2">
                 <X className="w-3.5 h-3.5" /> Temizle
               </button>
             )}
@@ -136,13 +145,12 @@ export default function MatchesPage() {
         </div>
       </motion.div>
 
-      {/* Active filters */}
       {hasFilters && (
         <div className="flex flex-wrap gap-2">
           {applied.skill && (
             <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs glass border border-purple-500/30 text-purple-300">
               Beceri: {applied.skill}
-              <button onClick={() => { const f = { ...applied, skill: '' }; setApplied(f); fetchMatches(f) }}>
+              <button type="button" onClick={() => removeFilter('skill')} aria-label="Beceri filtresini kaldır">
                 <X className="w-3 h-3" />
               </button>
             </span>
@@ -150,7 +158,7 @@ export default function MatchesPage() {
           {applied.city && (
             <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs glass border border-cyan-500/30 text-cyan-300">
               Şehir: {applied.city}
-              <button onClick={() => { const f = { ...applied, city: '' }; setApplied(f); fetchMatches(f) }}>
+              <button type="button" onClick={() => removeFilter('city')} aria-label="Şehir filtresini kaldır">
                 <X className="w-3 h-3" />
               </button>
             </span>
@@ -158,7 +166,7 @@ export default function MatchesPage() {
           {applied.mode && (
             <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs glass border border-green-500/30 text-green-300">
               {applied.mode === 'swap' ? 'Ücretsiz Takas' : 'Ücretli Ders'}
-              <button onClick={() => { const f = { ...applied, mode: '' }; setApplied(f); fetchMatches(f) }}>
+              <button type="button" onClick={() => removeFilter('mode')} aria-label="Mod filtresini kaldır">
                 <X className="w-3 h-3" />
               </button>
             </span>
@@ -166,7 +174,6 @@ export default function MatchesPage() {
         </div>
       )}
 
-      {/* Results */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <LoadingSpinner size="lg" />
@@ -174,20 +181,22 @@ export default function MatchesPage() {
       ) : matches.length === 0 ? (
         <div className="glass rounded-2xl p-12 text-center">
           <Users className="w-12 h-12 text-white/20 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-white/60 mb-2">Eşleşme Bulunamadı</h3>
+          <h3 className="text-lg font-semibold text-white/60 mb-2">Eşleşme bulunamadı</h3>
           <p className="text-white/40 text-sm">
-            {hasFilters ? 'Filtreleri değiştirerek tekrar dene.' : 'Profilini tamamlayarak daha fazla eşleşme bul.'}
+            {hasFilters
+              ? 'Filtreleri değiştirerek tekrar deneyebilirsin.'
+              : 'Öğrettiğin ve öğrenmek istediğin becerileri profilinde güncelleyerek daha uygun öneriler alabilirsin.'}
           </p>
           {hasFilters && (
-            <button onClick={handleReset} className="btn-secondary text-sm mt-4">
+            <button type="button" onClick={handleReset} className="btn-secondary text-sm mt-4">
               Filtreleri Temizle
             </button>
           )}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          {matches.map((match, i) => (
-            <MatchCard key={match.user.id} match={match} index={i} />
+          {matches.map((match, index) => (
+            <MatchCard key={match.user.id} match={match} index={index} />
           ))}
         </div>
       )}
