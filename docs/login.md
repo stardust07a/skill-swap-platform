@@ -29,27 +29,30 @@ Protected routing:
 
 1. The user enters email and password on the login page.
 2. The login form checks that both fields are filled.
-3. The email value is trimmed before it is sent to the backend.
-4. The frontend sends credentials to `POST /api/auth/login`.
-5. The backend finds the user by email.
-6. The backend compares the password with the stored bcrypt hash.
-7. If credentials are valid, the backend returns a JWT token and user data.
-8. The frontend stores the token in `localStorage`.
-9. Axios sends the token with future requests through the `Authorization`
+3. The email field is checked with a basic email format rule.
+4. The email value is trimmed before it is sent to the backend.
+5. The frontend sends credentials to `POST /api/auth/login`.
+6. The backend finds the user by email.
+7. The backend compares the password with the stored bcrypt hash.
+8. If credentials are valid, the backend returns a JWT token and user data.
+9. The frontend stores the token in `localStorage`.
+10. Axios sends the token with future requests through the `Authorization`
    header.
-10. The user is redirected to `/dashboard`.
+11. The user is redirected to `/dashboard`.
 
 ## Error Handling
 
 The login screen shows an error when:
 
 - email is empty
+- email is not in a valid format
 - password is empty
 - the backend rejects the email or password
 - the login request fails
 
 The error container uses `role="alert"` so the message is announced by
-assistive technologies.
+assistive technologies. Field-level messages use `aria-invalid` and
+`aria-describedby` to connect each input with its validation message.
 
 ## Acceptance Criteria Mapping
 
@@ -57,6 +60,7 @@ assistive technologies.
 
 - The user can fill email and password fields.
 - Empty fields show a warning before submitting.
+- Invalid email format shows a warning before submitting.
 
 ### Authentication
 
@@ -68,3 +72,11 @@ assistive technologies.
 - After successful login, the user is redirected to the dashboard.
 - Unauthenticated users cannot access protected routes and are redirected to
   the login page.
+
+## Verification
+
+Frontend build command:
+
+```bash
+npm.cmd run build
+```
