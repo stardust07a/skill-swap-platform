@@ -4,11 +4,12 @@ import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
 import { motion } from 'framer-motion'
 import {
-  Users, MessageCircle, BookOpen, Star, ArrowRight,
-  Zap, MapPin, TrendingUp, Bell, Plus, CheckCircle2, AlertTriangle
+  Users, MessageCircle, BookOpen, ArrowRight,
+  MapPin, TrendingUp, Bell, Plus
 } from 'lucide-react'
 import MatchCard from '../components/MatchCard'
 import LoadingSpinner from '../components/LoadingSpinner'
+import ProfileCompletionCard from '../components/ProfileCompletionCard'
 
 const StatCard = ({ icon: Icon, label, value, gradient, delay = 0 }) => (
   <motion.div
@@ -63,26 +64,10 @@ export default function Dashboard() {
   }, [])
 
   const profile = user?.profile
-  const teachSkills = user?.userSkills?.filter((s) => s.type === 'TEACH') || []
-  const learnSkills = user?.userSkills?.filter((s) => s.type === 'LEARN') || []
-
-  const profileChecklist = [
-    { label: 'Profil fotoğrafı', done: Boolean(user?.avatarUrl) },
-    { label: 'Bio', done: Boolean(profile?.bio?.trim()) },
-    { label: 'Şehir / ilçe', done: Boolean(profile?.city?.trim() && profile?.district?.trim()) },
-    { label: 'Öğretebildiği beceriler', done: teachSkills.length > 0 },
-    { label: 'Öğrenmek istediği beceriler', done: learnSkills.length > 0 },
-    { label: 'Uygunluk açıklaması', done: Boolean(profile?.availabilityText?.trim()) },
-    {
-      label: 'Takas veya ücretli ders tercihi',
-      done: Boolean(profile?.isSwapAvailable || profile?.isPaidLessonAvailable),
-    },
-  ]
-
-  const profileComplete = profileChecklist.filter((item) => item.done).length
-  const profilePct = Math.round((profileComplete / profileChecklist.length) * 100)
-
-  const pendingRequests = requests.filter((r) => r.status === 'PENDING' && r.receiverId === user?.id)
+  const teachSkills = user?.userSkills?.filter((skill) => skill.type === 'TEACH') || []
+  const learnSkills = user?.userSkills?.filter((skill) => skill.type === 'LEARN') || []
+  const pendingRequests = requests.filter((request) => request.status === 'PENDING' && request.receiverId === user?.id)
+  const firstName = user?.name?.split(' ')[0] || 'Kullanıcı'
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
@@ -92,7 +77,6 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Welcome header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -101,13 +85,13 @@ export default function Dashboard() {
         <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-transparent to-pink-600/10 pointer-events-none" />
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 relative z-10">
           <img
-            src={user?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name}`}
-            alt={user?.name}
+            src={user?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.name || 'Skill Swap')}`}
+            alt={user?.name || 'Profil avatarı'}
             className="w-16 h-16 rounded-2xl object-cover bg-purple-900"
           />
           <div className="flex-1">
             <h1 className="text-2xl sm:text-3xl font-bold text-white">
-              Hoş geldin, <span className="gradient-text">{user?.name?.split(' ')[0]}</span>
+              Hoş geldin, <span className="gradient-text">{firstName}</span>
             </h1>
             {profile?.city && (
               <div className="flex items-center gap-1.5 mt-1 text-white/50 text-sm">
@@ -117,55 +101,15 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Profile completion */}
-          <div className="w-full sm:w-72">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs text-white/50">Profil Tamamlama</span>
-              <span className="text-xs font-semibold text-purple-400">{profilePct}%</span>
-            </div>
-            <div
-              className="h-2 bg-white/10 rounded-full overflow-hidden"
-              role="progressbar"
-              aria-label="Profil tamamlama yüzdesi"
-              aria-valuemin="0"
-              aria-valuemax="100"
-              aria-valuenow={profilePct}
-            >
-              <div
-                className="h-full bg-gradient-to-r from-purple-600 to-pink-600 rounded-full transition-all duration-700"
-                style={{ width: `${profilePct}%` }}
-              />
-            </div>
-            {profilePct < 100 && (
-              <Link to="/profile/edit" className="text-xs text-purple-400 hover:text-purple-300 mt-1 inline-flex items-center gap-1">
-                Profili tamamla <ArrowRight className="w-3 h-3" />
-              </Link>
-            )}
-            <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-3">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-semibold text-white/70">Eksik Alanlar</p>
-                <span className="text-[11px] text-white/40">{profileComplete}/{profileChecklist.length}</span>
-              </div>
-              <div className="grid grid-cols-1 gap-1.5">
-                {profileChecklist.map((item) => {
-                  const Icon = item.done ? CheckCircle2 : AlertTriangle
-                  return (
-                    <div
-                      key={item.label}
-                      className={`flex items-center gap-2 text-xs ${item.done ? 'text-emerald-300' : 'text-rose-300'}`}
-                    >
-                      <Icon className="w-3.5 h-3.5 shrink-0" />
-                      <span className={item.done ? 'text-white/60' : 'text-white/80'}>{item.label}</span>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          </div>
+          <ProfileCompletionCard
+            user={user}
+            profile={profile}
+            teachSkills={teachSkills}
+            learnSkills={learnSkills}
+          />
         </div>
       </motion.div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard icon={Users} label="Eşleşme" value={matches.length} gradient="from-purple-600 to-pink-600" delay={0} />
         <StatCard icon={MessageCircle} label="Konuşma" value={conversations.length} gradient="from-cyan-600 to-blue-600" delay={0.1} />
@@ -173,7 +117,6 @@ export default function Dashboard() {
         <StatCard icon={Bell} label="Bekleyen" value={pendingRequests.length} gradient="from-green-600 to-teal-600" delay={0.3} />
       </div>
 
-      {/* Skills summary */}
       {(teachSkills.length > 0 || learnSkills.length > 0) && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -192,8 +135,8 @@ export default function Dashboard() {
               <div>
                 <p className="text-xs text-white/40 mb-2 uppercase tracking-wider">Öğrettiklerim</p>
                 <div className="flex flex-wrap gap-2">
-                  {teachSkills.map((us) => (
-                    <span key={us.id} className="skill-badge-teach">{us.skill.name}</span>
+                  {teachSkills.map((userSkill) => (
+                    <span key={userSkill.id} className="skill-badge-teach">{userSkill.skill.name}</span>
                   ))}
                 </div>
               </div>
@@ -202,8 +145,8 @@ export default function Dashboard() {
               <div>
                 <p className="text-xs text-white/40 mb-2 uppercase tracking-wider">Öğrenmek İstediklerim</p>
                 <div className="flex flex-wrap gap-2">
-                  {learnSkills.map((us) => (
-                    <span key={us.id} className="skill-badge-learn">{us.skill.name}</span>
+                  {learnSkills.map((userSkill) => (
+                    <span key={userSkill.id} className="skill-badge-learn">{userSkill.skill.name}</span>
                   ))}
                 </div>
               </div>
@@ -213,7 +156,6 @@ export default function Dashboard() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Top matches */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -234,16 +176,14 @@ export default function Dashboard() {
             </div>
           ) : (
             <div className="space-y-3">
-              {matches.slice(0, 3).map((match, i) => (
-                <MatchCard key={match.user.id} match={match} index={i} />
+              {matches.slice(0, 3).map((match, index) => (
+                <MatchCard key={match.user.id} match={match} index={index} />
               ))}
             </div>
           )}
         </div>
 
-        {/* Recent activity */}
         <div className="space-y-4">
-          {/* Recent conversations */}
           <div>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -260,18 +200,18 @@ export default function Dashboard() {
               </div>
             ) : (
               <div className="space-y-2">
-                {conversations.slice(0, 3).map((conv) => (
-                  <Link key={conv.id} to={`/messages/${conv.id}`}>
+                {conversations.slice(0, 3).map((conversation) => (
+                  <Link key={conversation.id} to={`/messages/${conversation.id}`}>
                     <div className="glass rounded-xl p-4 hover:border-white/20 transition-all flex items-center gap-3">
                       <img
-                        src={conv.otherUser.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${conv.otherUser.name}`}
-                        alt={conv.otherUser.name}
+                        src={conversation.otherUser.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(conversation.otherUser.name)}`}
+                        alt={conversation.otherUser.name}
                         className="w-9 h-9 rounded-full bg-purple-900 shrink-0"
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-white truncate">{conv.otherUser.name}</p>
+                        <p className="text-sm font-medium text-white truncate">{conversation.otherUser.name}</p>
                         <p className="text-xs text-white/40 truncate">
-                          {conv.lastMessage?.text || 'Konuşma başladı'}
+                          {conversation.lastMessage?.text || 'Konuşma başladı'}
                         </p>
                       </div>
                     </div>
@@ -281,7 +221,6 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Pending requests */}
           <div>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -298,25 +237,25 @@ export default function Dashboard() {
               </div>
             ) : (
               <div className="space-y-2">
-                {requests.slice(0, 3).map((req) => {
-                  const s = statusMap[req.status] || { label: req.status, cls: '' }
-                  const other = req.senderId === user?.id ? req.receiver : req.sender
+                {requests.slice(0, 3).map((request) => {
+                  const status = statusMap[request.status] || { label: request.status, cls: '' }
+                  const other = request.senderId === user?.id ? request.receiver : request.sender
                   return (
-                    <div key={req.id} className="glass rounded-xl p-4">
+                    <div key={request.id} className="glass rounded-xl p-4">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
                           <img
-                            src={other?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${other?.name}`}
-                            alt={other?.name}
+                            src={other?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(other?.name || 'Skill Swap')}`}
+                            alt={other?.name || 'Kullanıcı'}
                             className="w-7 h-7 rounded-full bg-purple-900 shrink-0"
                           />
                           <p className="text-sm text-white truncate">{other?.name}</p>
                         </div>
-                        <span className={`${s.cls} shrink-0`}>{s.label}</span>
+                        <span className={`${status.cls} shrink-0`}>{status.label}</span>
                       </div>
                       <p className="text-xs text-white/40 mt-1.5">
-                        {req.type === 'SWAP' ? 'Takas' : 'Ücretli Ders'}
-                        {req.skillWanted && ` · ${req.skillWanted.name}`}
+                        {request.type === 'SWAP' ? 'Takas' : 'Ücretli Ders'}
+                        {request.skillWanted && ` · ${request.skillWanted.name}`}
                       </p>
                     </div>
                   )
