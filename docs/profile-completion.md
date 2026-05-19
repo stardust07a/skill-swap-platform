@@ -8,14 +8,18 @@ As a user, I want to see my profile completion percentage and missing fields on
 the dashboard so that I can complete my profile and receive more accurate
 matches.
 
-## Implementation Location
+## Implementation Locations
 
-The profile completion tracking UI is implemented in:
+Profile completion component:
+
+- `client/src/components/ProfileCompletionCard.jsx`
+
+Dashboard usage:
 
 - `client/src/pages/Dashboard.jsx`
 
-The dashboard reads the logged-in user from `AuthContext` and calculates
-completion from the user's profile and skill data.
+The dashboard passes the logged-in user, profile, teaching skills and learning
+skills into `ProfileCompletionCard`.
 
 ## Completion Percentage
 
@@ -36,9 +40,9 @@ number of checklist items.
 
 The missing fields panel is shown under `Eksik Alanlar`.
 
-Completed items use a success icon and green text. Missing items use a warning
-icon and red text. This lets the user quickly understand which profile areas
-still need attention.
+Completed items use a green check icon and green text. Missing items use a red
+warning icon and red text. The card also shows how many fields are still
+missing, for example `3 alan eksik`.
 
 ## Progress Bar
 
@@ -47,15 +51,13 @@ The dashboard shows the completion value as both:
 - a numeric percentage
 - a visual progress bar
 
-The progress bar also includes accessibility attributes:
+The progress bar includes accessibility attributes:
 
 - `role="progressbar"`
 - `aria-label="Profil tamamlama yüzdesi"`
 - `aria-valuemin="0"`
 - `aria-valuemax="100"`
-- `aria-valuenow={profilePct}`
-
-This keeps the visual status understandable for assistive technologies as well.
+- `aria-valuenow={percentage}`
 
 ## Acceptance Criteria Mapping
 
@@ -79,3 +81,11 @@ This keeps the visual status understandable for assistive technologies as well.
 
 - Completed fields are shown with a green check icon.
 - Missing fields are shown with a red warning icon.
+
+## Verification
+
+Frontend build command:
+
+```bash
+npm.cmd run build
+```
