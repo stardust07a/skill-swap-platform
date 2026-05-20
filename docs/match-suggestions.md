@@ -44,15 +44,29 @@ Each match card displays:
 - avatar
 - city and district when available
 - match score
-- matching skills
+- skills the other user can teach to the current user
+- skills the other user wants to learn from the current user
 - teaching and learning skill preview
 - swap availability
 - paid lesson availability or hourly rate
+
+The score is shown with a circular percentage indicator so the user can quickly
+understand the match suitability.
 
 ## Empty State
 
 When no match is found, the matches page shows an informative empty state. If
 filters are active, the user can clear the filters and search again.
+
+## Frontend Filtering
+
+The matches page includes optional frontend controls for:
+
+- skill text
+- city
+- swap or paid lesson mode
+
+Applied filters are shown as removable filter chips above the result list.
 
 ## Acceptance Criteria Mapping
 
@@ -72,3 +86,11 @@ filters are active, the user can clear the filters and search again.
 ### Empty Result
 
 - If no suitable match is found, the user sees an informative message.
+
+## Verification
+
+Frontend build command:
+
+```bash
+npm.cmd run build
+```
