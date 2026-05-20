@@ -11,6 +11,7 @@ to my profile so that the system can suggest suitable matches.
 
 Frontend profile skill UI:
 
+- `client/src/components/SkillManager.jsx`
 - `client/src/pages/ProfileEditPage.jsx`
 
 Backend profile skill controller:
@@ -33,6 +34,12 @@ User skills are stored with two supported types:
 - `LEARN`: skills the user wants to learn
 
 The profile page displays these groups as separate lists.
+
+## Frontend Component
+
+`SkillManager` is responsible for the skill add UI. It receives the full skill
+catalog and the user's current skills from the profile edit page, then updates
+the displayed lists after add or remove actions.
 
 ## Add Existing Skill Flow
 
@@ -82,3 +89,11 @@ but prevents duplicates inside the same list.
 
 - The user can write a new skill that is not in the existing list.
 - The new skill is saved to the system and attached to the user profile.
+
+## Verification
+
+Frontend build command:
+
+```bash
+npm.cmd run build
+```
