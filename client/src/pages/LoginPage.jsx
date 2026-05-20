@@ -1,30 +1,70 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { motion } from 'framer-motion'
 import { Zap, Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle } from 'lucide-react'
 
+const initialForm = {
+  email: '',
+  password: '',
+}
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const getValidationErrors = (form) => {
+  const email = form.email.trim()
+  const errors = {}
+
+  if (!email) {
+    errors.email = 'E-posta alanı zorunludur.'
+  } else if (!emailRegex.test(email)) {
+    errors.email = 'Geçerli bir e-posta adresi giriniz.'
+  }
+
+  if (!form.password) {
+    errors.password = 'Şifre alanı zorunludur.'
+  }
+
+  return errors
+}
+
 export default function LoginPage() {
-  const [form, setForm] = useState({ email: '', password: '' })
+  const [form, setForm] = useState(initialForm)
+  const [touched, setTouched] = useState({})
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const { login } = useAuth()
   const navigate = useNavigate()
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  const validationErrors = useMemo(() => getValidationErrors(form), [form])
+  const visibleErrors = Object.keys(validationErrors).filter((field) => touched[field])
+
+  const updateField = (field, value) => {
+    setForm((current) => ({ ...current, [field]: value }))
+    if (error) setError('')
+  }
+
+  const markTouched = (field) => {
+    setTouched((current) => ({ ...current, [field]: true }))
+  }
+
+  const fieldError = (field) => (touched[field] ? validationErrors[field] : '')
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
     setError('')
 
-    const email = form.email.trim()
-    if (!email || !form.password) {
-      setError('E-posta ve şifre zorunludur.')
+    const errors = getValidationErrors(form)
+    if (Object.keys(errors).length > 0) {
+      setTouched({ email: true, password: true })
+      setError(Object.values(errors)[0])
       return
     }
 
     setLoading(true)
     try {
-      await login(email, form.password)
+      await login(form.email.trim(), form.password)
       navigate('/dashboard')
     } catch (err) {
       setError(err.response?.data?.error || 'Giriş yapılamadı. Lütfen tekrar deneyin.')
@@ -35,7 +75,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
-      {/* Background orbs */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/3 left-1/4 w-80 h-80 bg-purple-600/15 rounded-full blur-3xl" />
         <div className="absolute bottom-1/3 right-1/4 w-64 h-64 bg-pink-600/10 rounded-full blur-3xl" />
@@ -47,7 +86,6 @@ export default function LoginPage() {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md relative z-10"
       >
-        {/* Logo */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 mb-6">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-900/50">
@@ -59,10 +97,9 @@ export default function LoginPage() {
           <p className="text-white/50">Hesabına giriş yap ve öğrenmeye devam et</p>
         </div>
 
-        {/* Form card */}
         <div className="glass rounded-2xl p-8">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {error && (
+          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+            {(error || visibleErrors.length > 0) && (
               <motion.div
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -70,47 +107,68 @@ export default function LoginPage() {
                 role="alert"
               >
                 <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-                <span>{error}</span>
+                <span>{error || validationErrors[visibleErrors[0]]}</span>
               </motion.div>
             )}
 
-            {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-white/70 mb-2">E-posta</label>
+              <label className="block text-sm font-medium text-white/70 mb-2" htmlFor="login-email">
+                E-posta
+              </label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
                 <input
+                  id="login-email"
                   type="email"
                   value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  onChange={(event) => updateField('email', event.target.value)}
+                  onBlur={() => markTouched('email')}
                   placeholder="ornek@mail.com"
                   className="input-field pl-10"
-                  required
+                  aria-invalid={Boolean(fieldError('email'))}
+                  aria-describedby={fieldError('email') ? 'login-email-error' : undefined}
+                  autoComplete="email"
                 />
               </div>
+              {fieldError('email') && (
+                <p id="login-email-error" className="mt-1 text-xs text-red-400">
+                  {fieldError('email')}
+                </p>
+              )}
             </div>
 
-            {/* Password */}
             <div>
-              <label className="block text-sm font-medium text-white/70 mb-2">Şifre</label>
+              <label className="block text-sm font-medium text-white/70 mb-2" htmlFor="login-password">
+                Şifre
+              </label>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
                 <input
+                  id="login-password"
                   type={showPassword ? 'text' : 'password'}
                   value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  onChange={(event) => updateField('password', event.target.value)}
+                  onBlur={() => markTouched('password')}
                   placeholder="Şifrenizi giriniz"
                   className="input-field pl-10 pr-12"
-                  required
+                  aria-invalid={Boolean(fieldError('password'))}
+                  aria-describedby={fieldError('password') ? 'login-password-error' : undefined}
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={() => setShowPassword((current) => !current)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                  aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              {fieldError('password') && (
+                <p id="login-password-error" className="mt-1 text-xs text-red-400">
+                  {fieldError('password')}
+                </p>
+              )}
             </div>
 
             <button
@@ -138,7 +196,6 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Demo hint */}
           <div className="mt-4 p-3 rounded-xl bg-white/5 border border-white/10 text-center">
             <p className="text-xs text-white/40 mb-1">Demo Hesap</p>
             <p className="text-xs text-white/60 font-mono">ahmet@skillswap.com / 123456</p>
