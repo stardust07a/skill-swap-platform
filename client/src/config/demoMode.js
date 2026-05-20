@@ -1,5 +1,5 @@
 export const PRESENTATION_DEMO_MODE =
-  import.meta.env.VITE_PRESENTATION_DEMO_MODE !== 'false'
+  import.meta.env.VITE_PRESENTATION_DEMO_MODE === 'true'
 
 export const DEMO_DISABLED_PATHS = [
   '/matches',
