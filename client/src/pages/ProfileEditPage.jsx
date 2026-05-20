@@ -54,7 +54,23 @@ export default function ProfileEditPage() {
     setError('')
     setSuccess('')
     try {
-      await api.put('/profile/me', form)
+      const payload = {
+        ...form,
+        name: form.name.trim(),
+        avatarUrl: form.avatarUrl.trim(),
+        bio: form.bio.trim(),
+        city: form.city.trim(),
+        district: form.district.trim(),
+        availabilityText: form.availabilityText.trim(),
+      }
+
+      if (!payload.name) {
+        setError('Ad soyad alanı zorunludur.')
+        setLoading(false)
+        return
+      }
+
+      await api.put('/profile/me', payload)
       await fetchMe()
       setSuccess('Profil başarıyla güncellendi!')
       setTimeout(() => setSuccess(''), 3000)
@@ -122,6 +138,7 @@ export default function ProfileEditPage() {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center gap-3 p-4 rounded-xl bg-green-500/10 border border-green-500/30 text-green-400 text-sm"
+          role="status"
         >
           <CheckCircle className="w-4 h-4 shrink-0" />
           {success}
@@ -133,6 +150,7 @@ export default function ProfileEditPage() {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm"
+          role="alert"
         >
           <AlertCircle className="w-4 h-4 shrink-0" />
           {error}
