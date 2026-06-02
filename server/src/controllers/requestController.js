@@ -1,6 +1,24 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+const cleanText = (value) => {
+  if (value === undefined || value === null) return null;
+  const trimmed = String(value).trim();
+  return trimmed || null;
+};
+
+const parseOptionalDate = (value) => {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const parseOptionalPrice = (value) => {
+  if (value === undefined || value === null || value === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : NaN;
+};
+
 const getRequests = async (req, res) => {
   try {
     const requests = await prisma.lessonRequest.findMany({
@@ -42,6 +60,24 @@ const createRequest = async (req, res) => {
       return res.status(400).json({ error: 'Type SWAP veya PAID olmalıdır.' });
     }
 
+    if (type === 'SWAP' && !skillOfferedId && !skillWantedId) {
+      return res.status(400).json({ error: 'Takas talebi icin en az bir beceri secilmelidir.' });
+    }
+
+    const parsedPrice = parseOptionalPrice(price);
+    if (type === 'PAID' && Number.isNaN(parsedPrice)) {
+      return res.status(400).json({ error: 'Ucretli ders icin gecerli bir fiyat girilmelidir.' });
+    }
+
+    if (price !== undefined && price !== null && price !== '' && Number.isNaN(parsedPrice)) {
+      return res.status(400).json({ error: 'Fiyat 0 dan buyuk bir sayi olmalidir.' });
+    }
+
+    const parsedScheduledAt = parseOptionalDate(scheduledAt);
+    if (scheduledAt && !parsedScheduledAt) {
+      return res.status(400).json({ error: 'Gecerli bir tarih bilgisi girilmelidir.' });
+    }
+
     if (receiverId === req.user.id) {
       return res.status(400).json({ error: 'Kendinize talep gönderemezsiniz.' });
     }
@@ -58,9 +94,9 @@ const createRequest = async (req, res) => {
         type,
         skillOfferedId: skillOfferedId || null,
         skillWantedId: skillWantedId || null,
-        price: price ? parseFloat(price) : null,
-        note,
-        scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+        price: parsedPrice,
+        note: cleanText(note),
+        scheduledAt: parsedScheduledAt,
       },
       include: {
         sender: { select: { id: true, name: true, avatarUrl: true } },
