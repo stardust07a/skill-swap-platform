@@ -83,6 +83,7 @@ export default function Dashboard() {
   const profilePct = Math.round((profileComplete / profileChecklist.length) * 100)
 
   const pendingRequests = requests.filter((r) => r.status === 'PENDING' && r.receiverId === user?.id)
+  const totalUnreadMessages = conversations.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0)
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
@@ -242,6 +243,11 @@ export default function Dashboard() {
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
                 <MessageCircle className="w-5 h-5 text-cyan-400" />
                 Mesajlar
+                {totalUnreadMessages > 0 && (
+                  <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 text-xs">
+                    {totalUnreadMessages}
+                  </span>
+                )}
               </h2>
               <Link to="/messages" className="text-sm text-purple-400 hover:text-purple-300">
                 <ArrowRight className="w-4 h-4" />

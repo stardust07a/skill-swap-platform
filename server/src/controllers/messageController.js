@@ -21,10 +21,16 @@ const getConversations = async (req, res) => {
       orderBy: { updatedAt: 'desc' },
     });
 
-    const result = conversations.map((conv) => {
+    const result = await Promise.all(conversations.map(async (conv) => {
       const otherUser = conv.user1Id === req.user.id ? conv.user2 : conv.user1;
       const lastMessage = conv.messages[0] || null;
-      const unreadCount = 0;
+      const unreadCount = await prisma.message.count({
+        where: {
+          conversationId: conv.id,
+          senderId: { not: req.user.id },
+          isRead: false,
+        },
+      });
 
       return {
         id: conv.id,
@@ -33,7 +39,7 @@ const getConversations = async (req, res) => {
         unreadCount,
         updatedAt: conv.updatedAt,
       };
-    });
+    }));
 
     res.json({ conversations: result });
   } catch (error) {
