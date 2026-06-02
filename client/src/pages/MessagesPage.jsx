@@ -55,6 +55,9 @@ export default function MessagesPage() {
     try {
       const { data } = await api.get(`/conversations/${conv.id}/messages`)
       setMessages(data.messages || [])
+      setConversations((prev) =>
+        prev.map((c) => (c.id === conv.id ? { ...c, unreadCount: 0 } : c))
+      )
     } finally {
       setMsgLoading(false)
       inputRef.current?.focus()
@@ -165,6 +168,11 @@ export default function MessagesPage() {
                         {conv.lastMessage?.text || 'Konuşma başladı'}
                       </p>
                     </div>
+                    {conv.unreadCount > 0 && (
+                      <span className="min-w-5 h-5 px-1.5 rounded-full bg-cyan-500 text-white text-xs font-semibold flex items-center justify-center shrink-0">
+                        {conv.unreadCount}
+                      </span>
+                    )}
                   </button>
                 ))
               )}
