@@ -1,6 +1,17 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+const allowedStatusTransitions = {
+  PENDING: ['ACCEPTED', 'REJECTED', 'CANCELLED'],
+  ACCEPTED: ['COMPLETED', 'CANCELLED'],
+  REJECTED: [],
+  COMPLETED: [],
+  CANCELLED: [],
+};
+
+const canChangeStatus = (currentStatus, nextStatus) =>
+  allowedStatusTransitions[currentStatus]?.includes(nextStatus);
+
 const getRequests = async (req, res) => {
   try {
     const requests = await prisma.lessonRequest.findMany({
@@ -93,6 +104,10 @@ const updateRequestStatus = async (req, res) => {
     }
 
     // Yetki kontrolü
+    if (!canChangeStatus(request.status, status)) {
+      return res.status(400).json({ error: 'Bu talep durumu bu sekilde guncellenemez.' });
+    }
+
     if (status === 'ACCEPTED' || status === 'REJECTED') {
       if (request.receiverId !== req.user.id) {
         return res.status(403).json({ error: 'Bu talebi yalnızca alıcı kabul/reddedebilir.' });
