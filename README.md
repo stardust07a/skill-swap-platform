@@ -1,56 +1,91 @@
-# Skill Swap 🚀
+# Skill Swap Platform
 
-**Becerini Takas Et, Yeni Bir Şey Öğren**
+A full-stack platform that connects people who want to exchange knowledge and practical skills. Users create profiles, list skills they can teach and want to learn, receive ranked match suggestions, send swap requests, message one another, arrange meetings, and publish reviews.
 
-Modern, full-stack beceri takası ve öğrenme platformu. SQLite ile tamamen local çalışır — PostgreSQL gerekmez.
+The repository demonstrates a complete React/Express application with JWT authentication, a Prisma data layer, role-based administration, and a responsive animated interface.
 
----
+## Core features
 
-## Teknoloji Yığını
+- Account registration and JWT-based authentication
+- bcrypt password hashing
+- Profile completion and profile editing
+- Teach/learn skill management
+- Ranked, location-aware match suggestions
+- Filters for skill, city, and exchange mode
+- Direct conversations and message polling
+- Incoming and outgoing swap requests
+- Multi-state request workflow and meeting-link support
+- User ratings and written reviews
+- Admin statistics and user management
+- Seeded demo environment
+- Responsive dark glassmorphism UI with Framer Motion
 
-**Frontend:** React 18 + Vite + Tailwind CSS + Framer Motion + React Router v6 + Axios + Lucide React
+## Technology stack
 
-**Backend:** Node.js + Express.js + Prisma ORM + **SQLite** + JWT + bcryptjs
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 18, Vite, React Router, Axios |
+| UI | Tailwind CSS, Framer Motion, Lucide React |
+| Backend | Node.js, Express.js |
+| Data | Prisma ORM, SQLite |
+| Security | JWT, bcryptjs, protected/admin middleware |
 
----
+## Architecture
 
-## Kurulum & Çalıştırma
-
-### Ön Gereksinimler
-- Node.js >= 18
-- npm (Node ile birlikte gelir)
-- PostgreSQL **gerekmez** — SQLite kullanılıyor
-
----
-
-### Terminal 1 — Backend
-
-```bash
-cd server
-npm install
-npx prisma db push
-npm run db:seed
-npm run dev
+```text
+skill-swap-platform/
+├── client/
+│   ├── src/components/       # Shared UI and match/profile components
+│   ├── src/context/          # Authentication state
+│   ├── src/layouts/          # Authenticated application layout
+│   ├── src/pages/            # Landing, auth, profile, matches, chat, requests, admin
+│   └── src/services/api.js   # Axios client and token interceptors
+├── server/
+│   ├── prisma/schema.prisma  # SQLite relational model
+│   ├── prisma/seed.js        # Demo users, skills, and interactions
+│   └── src/
+│       ├── controllers/      # Business logic
+│       ├── middleware/       # JWT and admin authorization
+│       ├── routes/           # REST API routes
+│       └── index.js          # Express entry point
+└── docs/                     # Feature and presentation notes
 ```
 
-> Backend `http://localhost:5000` adresinde başlar.
-> SQLite veritabanı `server/prisma/dev.db` olarak oluşur.
+## Matching model
 
----
+Candidates are scored using complementary skills and location signals.
 
-### Terminal 2 — Frontend
+| Signal | Score |
+| --- | ---: |
+| Candidate teaches something the user wants to learn | +40 |
+| User teaches something the candidate wants to learn | +40 |
+| Same city | +10 |
+| Same district | +10 |
+| Mutual exchange is possible | +10 bonus |
 
-```bash
-cd client
-npm install
-npm run dev
+The final score is capped at 100. The API sorts matches by score and supports additional query filters.
+
+## Local setup
+
+### Requirements
+
+- Node.js 18 or newer
+- npm
+- No external database server is required
+
+### 1. Configure the backend
+
+Create `server/.env`:
+
+```env
+DATABASE_URL="file:./dev.db"
+JWT_SECRET="replace-this-with-a-long-random-secret"
+JWT_EXPIRES_IN="7d"
+CLIENT_URL="http://localhost:5173"
+PORT=5000
 ```
 
-> Frontend `http://localhost:5173` adresinde açılır.
-
----
-
-### Tek komutla sıfırdan kurulum (backend)
+### 2. Install and start the backend
 
 ```bash
 cd server
@@ -59,162 +94,84 @@ npm run db:setup
 npm run dev
 ```
 
----
+The API starts at `http://localhost:5000` and Prisma creates `server/prisma/dev.db`.
 
-## Test Kullanıcıları
+### 3. Install and start the frontend
 
-| Rol   | E-posta               | Şifre  | Öğretir        | Öğrenir   | Şehir             |
-|-------|-----------------------|--------|----------------|-----------|-------------------|
-| Admin | admin@skillswap.com   | 123456 | —              | —         | İstanbul/Kadıköy  |
-| User  | ahmet@skillswap.com   | 123456 | Kod, React     | Gitar     | İstanbul/Kadıköy  |
-| User  | selin@skillswap.com   | 123456 | Gitar, Müzik   | Kod       | İstanbul/Kadıköy  |
-| User  | merve@skillswap.com   | 123456 | İngilizce      | Yoga      | İstanbul/Beşiktaş |
-| User  | kerem@skillswap.com   | 123456 | Yoga, Pilates  | İngilizce | İstanbul/Şişli    |
-| User  | deniz@skillswap.com   | 123456 | Resim, Grafik  | Müzik     | İzmir/Konak       |
-
----
-
-## Veritabanını Sıfırlamak
+In a second terminal:
 
 ```bash
+cd client
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173`. Vite proxies `/api` requests to the backend during development.
+
+## Useful commands
+
+```bash
+# Reset and reseed the SQLite database
 cd server
 npm run db:reset
-```
 
-Bu komut veritabanını siler, yeniden oluşturur ve seed verilerini yükler.
-
----
-
-## Prisma Studio (Veritabanı Görüntüleyici)
-
-```bash
-cd server
+# Inspect data with Prisma Studio
 npx prisma studio
+
+# Build the frontend
+cd ../client
+npm run build
 ```
 
----
+## Demo access
 
-## API Endpoints
+Seed data includes an admin and five user profiles. The demo password is `123456`.
 
-### Auth
-```
-POST /api/auth/register
-POST /api/auth/login
-GET  /api/auth/me
-```
+| Role | Email |
+| --- | --- |
+| Admin | `admin@skillswap.com` |
+| User | `ahmet@skillswap.com` |
+| User | `selin@skillswap.com` |
+| User | `merve@skillswap.com` |
+| User | `kerem@skillswap.com` |
+| User | `deniz@skillswap.com` |
 
-### Profile
-```
-GET  /api/profile/me
-PUT  /api/profile/me
-POST /api/profile/skills
-DEL  /api/profile/skills/:id
-GET  /api/users/:id
-```
+These credentials are development-only and must never be used in production.
 
-### Skills
-```
-GET  /api/skills
-POST /api/skills
-```
+## API overview
 
-### Matches
-```
-GET  /api/matches?skill=&city=&mode=
-```
+| Area | Representative endpoints |
+| --- | --- |
+| Authentication | `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` |
+| Profile | `GET/PUT /api/profile/me`, profile skill operations |
+| Users | `GET /api/users/:id` |
+| Skills | `GET/POST /api/skills` |
+| Matches | `GET /api/matches?skill=&city=&mode=` |
+| Conversations | list/create conversations and read/send messages |
+| Requests | list/create requests, change status, attach meeting links |
+| Reviews | list a user's reviews and create a review |
+| Admin | statistics and user-management endpoints |
 
-### Messages
-```
-GET  /api/conversations
-POST /api/conversations
-GET  /api/conversations/:id/messages
-POST /api/conversations/:id/messages
-```
+Protected requests use `Authorization: Bearer <token>`. The Axios client attaches the stored token and clears expired sessions after a `401` response.
 
-### Requests
-```
-GET  /api/requests
-POST /api/requests
-PUT  /api/requests/:id/status
-PUT  /api/requests/:id/meeting-link
-```
+## Domain model
 
-### Reviews
-```
-GET  /api/reviews/users/:id/reviews
-POST /api/reviews
-```
+Prisma models cover users, skills, conversations, messages, swap requests, and reviews. Relations preserve the participants and history required for matching, messaging, request state, and reputation.
 
-### Admin
-```
-GET  /api/admin/stats
-GET  /api/admin/users
-```
+## Security and current limitations
 
----
+- SQLite and polling are appropriate for a local/demo deployment, not high-concurrency production traffic.
+- The JWT secret must be supplied through environment variables and rotated securely.
+- Tokens are kept in browser localStorage; a hardened production version should consider secure HTTP-only cookies.
+- Messaging uses periodic polling rather than WebSockets.
+- Rate limiting, email verification, password recovery, audit logs, and automated moderation are not implemented.
+- The repository does not include a comprehensive integration/end-to-end test suite.
+- Demo mode and seeded credentials must be disabled before a real deployment.
 
-## Eşleşme Algoritması
+## Documentation
 
-| Kriter | Puan |
-|--------|------|
-| Kullanıcının öğrenmek istediği beceri karşı tarafta var | +40 |
-| Kullanıcının öğrettiği beceri karşı taraf öğrenmek istiyor | +40 |
-| Aynı şehir | +10 |
-| Aynı ilçe | +10 |
-| Karşılıklı takas mümkün (bonus) | +10 |
-| **Maksimum** | **100** |
+The `docs/` directory contains focused notes for registration, login, profile completion, skill management, matching, the dashboard, the database, and presentation/demo mode.
 
----
+## Author
 
-## Proje Yapısı
-
-```
-skill-swap/
-├── client/
-│   ├── src/
-│   │   ├── components/      # Navbar, MatchCard, LoadingSpinner
-│   │   ├── context/         # AuthContext (JWT)
-│   │   ├── layouts/         # Layout (Navbar wrapper)
-│   │   ├── pages/           # 11 sayfa
-│   │   ├── services/        # axios instance
-│   │   ├── App.jsx          # Router + Protected routes
-│   │   └── index.css        # Tailwind + custom classes
-│   ├── index.html
-│   ├── vite.config.js       # Proxy: /api → localhost:5000
-│   ├── tailwind.config.js
-│   └── package.json
-│
-└── server/
-    ├── src/
-    │   ├── controllers/     # 8 controller
-    │   ├── middleware/      # JWT auth + admin guard
-    │   ├── routes/          # 9 route dosyası
-    │   └── index.js         # Express app
-    ├── prisma/
-    │   ├── schema.prisma    # SQLite şeması
-    │   ├── seed.js          # Demo veriler
-    │   └── dev.db           # SQLite dosyası (db push sonrası oluşur)
-    ├── .env                 # DATABASE_URL=file:./dev.db
-    └── package.json
-```
-
----
-
-## Özellikler
-
-- ✅ JWT Authentication (register/login/me)
-- ✅ bcrypt şifre hashleme
-- ✅ SQLite — kurulum gerektirmez
-- ✅ Kullanıcı profil yönetimi
-- ✅ Beceri ekleme/çıkarma (TEACH/LEARN)
-- ✅ Akıllı eşleşme algoritması (maks 100 puan)
-- ✅ Konum bazlı filtreleme
-- ✅ Mesajlaşma sistemi (5s polling)
-- ✅ Ders/Takas talep sistemi (5 durum)
-- ✅ Meeting linki ekleme
-- ✅ Puanlama & yorum sistemi
-- ✅ Admin paneli
-- ✅ Dark mode glassmorphism tasarım
-- ✅ Tam responsive (mobil/tablet/desktop)
-- ✅ Framer Motion animasyonları
-- ✅ Demo seed data (6 kullanıcı)
+Built by **Aziz** as a full-stack portfolio project focused on authentication, matching logic, relational data, and end-to-end product flows.
